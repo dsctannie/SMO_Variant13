@@ -1,0 +1,125 @@
+@startuml
+title Диаграмма классов. Вариант 13. Служба доставки еды\nЖазыбаева Б.Т., гр. 5130904/40106
+
+' ============ КЛАСС ЗАЯВКИ ============
+class Bid {
+  - int id
+  - int sourceId
+  - double arrivalTime
+  - double startServiceTime
+  - double endServiceTime
+  - string status
+  + Bid(int id, int sourceId, double arrivalTime)
+  + int getId()
+  + int getSourceId()
+  + double getArrivalTime()
+  + double getWaitingTime()
+  + double getServiceTime()
+  + double getTotalTime()
+}
+
+' ============ КЛАСС ИСТОЧНИКА ============
+class Source {
+  - int sourceId
+  - double a
+  - double b
+  - int generatedCount
+  + Source(int sourceId, double a, double b)
+  + Bid generateBid(int bidNumber)
+  + int getSourceId()
+  + int getGeneratedCount()
+}
+
+' ============ КЛАСС БУФЕРА ============
+class Buffer {
+  - int capacity
+  - list<Bid> slots
+  + Buffer(int capacity)
+  + bool hasFreePlace()
+  + bool putBid(Bid bid)
+  + Bid removeBid(int index)
+  + bool isEmpty()
+  + int size()
+  + Bid getBid(int index)
+}
+
+' ============ КЛАСС ПРИБОРА ============
+class Device {
+  - int deviceId
+  - bool busy
+  - double busyTime
+  - double totalTime
+  + Device(int deviceId)
+  + bool isFree()
+  + void serve(Bid bid)
+  + void release()
+  + double getUtilization()
+  + int getDeviceId()
+}
+
+' ============ КЛАСС ДИСПЕТЧЕРА ПОСТАНОВКИ ============
+class DispatcherPost {
+  - Buffer buffer
+  + DispatcherPost(Buffer buffer)
+  + bool post(Bid bid)
+  + bool putToBuffer(Bid bid)
+}
+
+' ============ КЛАСС ДИСПЕТЧЕРА ВЫБОРА ============
+class DispatcherSelect {
+  - Buffer buffer
+  - list<Device> devices
+  + DispatcherSelect(Buffer buffer, list<Device> devices)
+  + Bid selectBid()
+  + Device selectDevice()
+  + void processNextBid()
+}
+
+' ============ КЛАСС СТАТИСТИКИ ============
+class Statistics {
+  - int generated
+  - int refused
+  - int served
+  - list<double> waitingTimes
+  - list<double> serviceTimes
+  + Statistics()
+  + void recordGenerated()
+  + void recordRefused(int sourceId)
+  + void recordServed(Bid bid)
+  + void printSummary()
+  + double getRefusalProbability()
+  + double getAvgWaitingTime()
+  + double getAvgServiceTime()
+}
+
+' ============ КЛАСС СИСТЕМЫ ============
+class SimulationSystem {
+  - list<Source> sources
+  - Buffer buffer
+  - list<Device> devices
+  - DispatcherPost dispatcherPost
+  - DispatcherSelect dispatcherSelect
+  - Statistics statistics
+  - double currentTime
+  + SimulationSystem(int nSources, int bufferSize, int nDevices)
+  + void runStepMode()
+  + void runAutoMode()
+}
+
+' ============ СВЯЗИ МЕЖДУ КЛАССАМИ ============
+
+Source ..> Bid : создаёт
+DispatcherPost --> Buffer : ссылка на буфер
+DispatcherSelect --> Buffer : ссылка на буфер
+DispatcherSelect --> Device : ссылка на приборы
+Buffer o-- Bid : хранит заявки
+Device ..> Bid : обслуживает
+SimulationSystem *-- Source
+SimulationSystem *-- Buffer
+SimulationSystem *-- Device
+SimulationSystem *-- DispatcherPost
+SimulationSystem *-- DispatcherSelect
+SimulationSystem *-- Statistics
+Statistics ..> Bid : собирает данные
+
+@enduml
