@@ -1,0 +1,98 @@
+@startuml
+autonumber
+title Сиквенс-диаграмма. Вариант 13. Служба доставки еды\nЖазыбаева Б.Т., гр. 5130904/40106
+
+actor "Клиент\n(Источник, ИБ)" as Client
+participant "ДП\n(Диспетчер постановки)" as DP
+queue "Буфер\n(Очередь заказов)" as Buffer
+participant "ДВ\n(Диспетчер выбора)" as DV
+participant "Прибор\n(Диспетчер П1..Пn)" as Device
+
+== Happy Flow: буфер пуст, прибор свободен ==
+
+Client -> DP: Заказ (ИЗ2: равномерный интервал)
+activate DP
+DP -> Buffer: put(bid) — Д1033: на первое свободное место
+activate Buffer
+Buffer --> DP: OK (место N)
+deactivate Buffer
+DP --> Client: Заказ принят
+deactivate DP
+
+note over DV: ДВ активируется по событию:\nприбор свободен и есть заявки в буфере
+
+activate DV
+DV -> Buffer: hasFreeBid()?
+activate Buffer
+Buffer --> DV: Да
+DV -> Buffer: selectBid() — Д2Б4: приоритет по номеру источника
+Buffer --> DV: Заявка от источника с мин. номером\n(при равенстве — последняя)
+deactivate Buffer
+DV -> Device: selectDevice() — Д2П1: приоритет по номеру
+activate Device
+Device --> DV: Свободный прибор (П1)
+DV -> Device: serve(bid) — ПЗ1: экспоненциальное обслуживание
+Device --> DV: Принято
+deactivate Device
+deactivate DV
+
+== Сценарий 2: все приборы заняты — заказ ждёт в буфере ==
+
+Client -> DP: Заказ
+activate DP
+DP -> Buffer: put(bid) — Д1033
+activate Buffer
+Buffer --> DP: OK (место M)
+deactivate Buffer
+DP --> Client: Заказ принят (ожидает в буфере)
+deactivate DP
+note right of Buffer: Заказ ждёт, пока не освободится прибор
+
+== Сценарий 3: отказ Д1005 — буфер полон ==
+
+Client -> DP: Заказ
+activate DP
+DP -> Buffer: put(bid) — Д1033
+activate Buffer
+Buffer --> DP: Нет свободного места
+deactivate Buffer
+DP -> DP: Состояние буфера не меняется (Д1005)
+DP --> Client: Отказ (Д1005: вновь пришедшая заявка)
+deactivate DP
+
+== Сценарий 4: прибор освободился — ДВ берёт заказ из буфера ==
+
+Device -> DV: Прибор освободился (событие)
+activate DV
+
+loop Пока есть свободный прибор и заявки в буфере
+
+DV -> Buffer: hasFreeBid()?
+activate Buffer
+Buffer --> DV: Да
+DV -> Buffer: selectBid() — Д2Б4
+Buffer --> DV: Заявка (по приоритету источника)
+deactivate Buffer
+DV -> Device: selectDevice() — Д2П1: перебор по номеру
+activate Device
+Device --> DV: Свободный прибор (Пk)
+DV -> Device: serve(bid) — ПЗ1
+Device --> DV: Принято
+deactivate Device
+
+end
+
+deactivate DV
+
+== Крайний случай: буфер пуст — прибор простаивает ==
+
+Device -> DV: Прибор освободился
+activate DV
+DV -> Buffer: hasFreeBid()?
+activate Buffer
+Buffer --> DV: Нет
+deactivate Buffer
+DV --> Device: Простой (нет заявок)
+deactivate DV
+
+@enduml
