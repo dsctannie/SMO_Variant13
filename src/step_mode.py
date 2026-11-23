@@ -106,14 +106,13 @@ def trigger_service(current_time, buffer, dispatcher, event_queue):
             end_time = free_dev.serve(bid_to_serve, current_time)
             heapq.heappush(event_queue, (end_time, "END_SERVICE", free_dev))
 
-def run_step_mode(num_sources=3, buffer_size=4, num_devices=2, total_events=20):
+def run_step_mode(num_sources=3, buffer_size=4, num_devices=2, total_events=30):
     print("="*85)
     print("КАЛЕНДАРЬ СОБЫТИЙ (ОД1) - Вариант 13")
     print("="*85)
     print(f"{'Событие':<10} | {'Время':<8} | {'Признак':<8} | {'Число заявок':<14} | {'Число отказов'}")
     print("-" * 85)
 
-    # Инициализация параметров
     sources = [Source(i+1, 1.0, 5.0) for i in range(num_sources)] 
     buffer = Buffer(buffer_size)
     devices = [Device(i+1, 4.0) for i in range(num_devices)]     
@@ -124,7 +123,6 @@ def run_step_mode(num_sources=3, buffer_size=4, num_devices=2, total_events=20):
     total_generated = 0
     total_refused = 0
 
-    # Планируем первые заявки от всех источников
     for src in sources:
         heapq.heappush(event_queue, (src.get_next_time(0), "NEW_BID", src))
 
@@ -140,7 +138,6 @@ def run_step_mode(num_sources=3, buffer_size=4, num_devices=2, total_events=20):
             total_generated += 1
             
             if buffer.put_bid(bid):
-                # Успешно помещена в буфер
                 print(f"И{src.id:<9} | {current_time:<8.2f} | {0:<8} | {total_generated:<14} | {total_refused}")
                 trigger_service(current_time, buffer, dispatcher, event_queue)
             else:
@@ -153,6 +150,9 @@ def run_step_mode(num_sources=3, buffer_size=4, num_devices=2, total_events=20):
         elif event_type == "END_SERVICE":
             dev = data
             dev.release()
+            
+            print(f"П{dev.id:<9} | {current_time:<8.2f} | {'-':<8} | {total_generated:<14} | {total_refused}")
+            
             trigger_service(current_time, buffer, dispatcher, event_queue)
 
         processed_events += 1
